@@ -1,0 +1,12 @@
+{
+  "_doc": "Exceptions assumées au socle (SOCLE.md). Clé = nom du dépôt ; valeur = contrôle → raison, ou \"ignorer\": raison pour exclure le dépôt de l'audit.",
+  "Gcm4": {
+    "licence": "GPL-3.0 : fork de kuthulux/gnome-connection-manager (GPLv3), relicence en MIT impossible"
+  },
+  "demo-repository": {
+    "ignorer": "dépôt de démonstration GitHub, privé, pas une production de l'équipe"
+  },
+  "AsyncVnc4": {
+    "licence": "fork d'asyncvnc2, lui-même dérivé d'asyncvnc, tous deux sous GPL (PyPI) : relicence en MIT impossible ; ajouter le LICENSE GPL d'origine"
+  }
+}

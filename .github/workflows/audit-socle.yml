@@ -1,0 +1,45 @@
+# Audit quotidien du socle qualité sur tous les dépôts de l'organisation
+# (SOCLE.md). Rapport dans le résumé du job et dans l'issue « Audit du socle
+# qualité » de ce dépôt (créée, mise à jour, fermée quand tout est conforme).
+#
+# Le GITHUB_TOKEN ne voit que les dépôts publics de l'organisation ; il lit
+# la partie publique des protections (branche protégée, checks requis).
+name: Audit du socle qualité
+
+"on":
+  schedule:
+    - cron: "41 6 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - audit-exceptions.json
+      - scripts/audit_socle.py
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit:
+    name: Audit des dépôts Mathide-Team
+    runs-on: ${{ fromJSON(vars.RUNS_ON_LINUX || '{"group":"maison","labels":["self-hosted","linux"]}') }}
+    steps:
+      - name: Checkout du dépôt
+        uses: actions/checkout@v7
+
+      - name: Installation de uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+
+      - name: Installation de Python
+        run: uv python install
+
+      - name: Audit et issue de suivi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          uv run --no-project python scripts/audit_socle.py \
+            --org "${{ github.repository_owner }}" \
+            --issue "${{ github.repository }}" \
+            --sortie rapport.md --rapport-seul
+          cat rapport.md >> "$GITHUB_STEP_SUMMARY"
