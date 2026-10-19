@@ -1,6 +1,6 @@
-# Mathide-Team/.github
+# Mathilde-Team/.github
 
-Dépôt de configuration de l'organisation **Mathide-Team**.
+Dépôt de configuration de l'organisation **Mathilde-Team**.
 
 | Fichier | Rôle |
 |---|---|
@@ -12,12 +12,12 @@ Dépôt de configuration de l'organisation **Mathide-Team**.
 | [`audit-exceptions.json`](audit-exceptions.json) | Exceptions assumées (forks sous GPL, dépôt de démonstration) |
 | `.github/workflows/audit-socle.yml` | Audit quotidien, avec rapport dans l'issue « Audit du socle qualité » |
 
-Nouveau dépôt : partir du modèle [`modele-depot`](https://github.com/Mathide-Team/modele-depot), puis lancer `scripts/appliquer_socle.sh`. La marche à suivre est décrite dans [SOCLE.md](SOCLE.md#5-nouveau-dépôt--marche-à-suivre).
+Nouveau dépôt : partir du modèle [`modele-depot`](https://github.com/Mathilde-Team/modele-depot), puis lancer `scripts/appliquer_socle.sh`. La marche à suivre est décrite dans [SOCLE.md](SOCLE.md#5-nouveau-dépôt--marche-à-suivre).
 
 Audit local :
 
 ```bash
-GITHUB_TOKEN=$(gh auth token) python3 scripts/audit_socle.py --org Mathide-Team
+GITHUB_TOKEN=$(gh auth token) python3 scripts/audit_socle.py --org Mathilde-Team
 ```
 
 Ce dépôt suit lui-même le socle : PR vers `dev`, puis `dev` → `main`. Licence [MIT](LICENSE).
