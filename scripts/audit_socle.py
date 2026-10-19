@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Audit du socle qualité Mathide-Team sur tous les dépôts de l'organisation.
+"""Audit du socle qualité Mathilde-Team sur tous les dépôts de l'organisation.
 
 Contrôles par dépôt (voir SOCLE.md) :
   licence    licence MIT détectée par GitHub (fichier LICENSE)
@@ -167,7 +167,7 @@ def publier_issue(client: Client, depot: str, texte: str, conforme: bool) -> str
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--org", default="Mathide-Team")
+    parser.add_argument("--org", default="Mathilde-Team")
     parser.add_argument("--exceptions", default="audit-exceptions.json")
     parser.add_argument("--sortie", help="fichier Markdown du rapport")
     parser.add_argument("--depots", nargs="*", help="limiter l'audit à ces dépôts")

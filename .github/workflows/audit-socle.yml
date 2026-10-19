@@ -22,7 +22,7 @@ permissions:
 
 jobs:
   audit:
-    name: Audit des dépôts Mathide-Team
+    name: Audit des dépôts Mathilde-Team
     runs-on: ${{ fromJSON(vars.RUNS_ON_LINUX || '{"group":"maison","labels":["self-hosted","linux"]}') }}
     steps:
       - name: Checkout du dépôt
