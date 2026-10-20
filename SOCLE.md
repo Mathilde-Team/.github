@@ -1,6 +1,6 @@
-# Socle qualité Mathide-Team
+# Socle qualité Mathilde-Team
 
-Règles communes à toutes les productions de l'équipe, reprises de Gcm4, Netcross et SwitchCapture. Le dépôt [`modele-depot`](https://github.com/Mathide-Team/modele-depot) les fournit prêtes à l'emploi. L'[audit quotidien](.github/workflows/audit-socle.yml) signale les dépôts non conformes dans l'issue « Audit du socle qualité ».
+Règles communes à toutes les productions de l'équipe, reprises de Gcm4, Netcross et SwitchCapture. Le dépôt [`modele-depot`](https://github.com/Mathilde-Team/modele-depot) les fournit prêtes à l'emploi. L'[audit quotidien](.github/workflows/audit-socle.yml) signale les dépôts non conformes dans l'issue « Audit du socle qualité ».
 
 ## 1. Licence
 
@@ -20,7 +20,7 @@ Règles communes à toutes les productions de l'équipe, reprises de Gcm4, Netcr
 Les règles sont rangées dans le dépôt, sous `.github/branch-protection/<branche>.json`. Ce sont les données exactes à envoyer à l'API « Update branch protection » :
 
 ```bash
-gh api -X PUT repos/Mathide-Team/<depot>/branches/<branche>/protection \
+gh api -X PUT repos/Mathilde-Team/<depot>/branches/<branche>/protection \
   --input .github/branch-protection/<branche>.json
 ```
 
@@ -51,9 +51,9 @@ Conventions des workflows :
 
 ## 5. Nouveau dépôt : marche à suivre
 
-1. GitHub → **New repository** → *Repository template* : **`Mathide-Team/modele-depot`** (ou `gh repo create Mathide-Team/<nom> --public --template Mathide-Team/modele-depot`).
+1. GitHub → **New repository** → *Repository template* : **`Mathilde-Team/modele-depot`** (ou `gh repo create Mathilde-Team/<nom> --public --template Mathilde-Team/modele-depot`).
 2. Adapter le job « Qualité (lint, tests) » de `ci.yml` au langage du dépôt. Si le nom du job change, mettre à jour les deux fichiers JSON.
-3. Appliquer le socle (administrateur) : `scripts/appliquer_socle.sh Mathide-Team/<nom>`. Le script crée `dev` et applique les protections.
+3. Appliquer le socle (administrateur) : `scripts/appliquer_socle.sh Mathilde-Team/<nom>`. Le script crée `dev` et applique les protections **versionnées dans le dépôt cible** (`.github/branch-protection/*.json`, lues sur `dev` puis `main` ; règle générique du modèle seulement à défaut). Il refuse d'appliquer une règle dont un contrôle requis n'est produit par aucun job des workflows du dépôt (#5).
 4. À partir de là, tout passe par une PR vers `dev`.
 
 ## 6. Pourquoi pas de règles imposées par l'organisation

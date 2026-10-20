@@ -1,6 +1,6 @@
-# Contribuer aux dépôts Mathide-Team
+# Contribuer aux dépôts Mathilde-Team
 
-Ce guide s'applique à tous les dépôts de l'organisation qui n'ont pas leur propre `CONTRIBUTING.md`. Les règles complètes sont dans le [socle qualité](https://github.com/Mathide-Team/.github/blob/main/SOCLE.md).
+Ce guide s'applique à tous les dépôts de l'organisation qui n'ont pas leur propre `CONTRIBUTING.md`. Les règles complètes sont dans le [socle qualité](https://github.com/Mathilde-Team/.github/blob/main/SOCLE.md).
 
 ## Flux de travail
 
