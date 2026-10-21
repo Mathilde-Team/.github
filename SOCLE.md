@@ -74,3 +74,21 @@ Toute intégration ou script de l'équipe qui s'authentifie auprès d'un service
 - tout échec réactive le mode bavard.
 
 Un échec de connexion ne doit jamais rester silencieux : l'exception est journalisée avec sa cause exacte (DNS, TLS, délai dépassé…), sans jamais y inclure mots de passe, cookies ou données de compte. Référence d'implémentation : Besancon-Emoi #21 (helper `_auth_log` dans `api.py`).
+
+## 8. Journalisation Python : loguru
+
+**Tout code Python de l'équipe journalise avec [loguru](https://loguru.readthedocs.io/)** : applications, bibliothèques, CLI et scripts de `scripts/`.
+
+**Seule exception : les intégrations Home Assistant** (`custom_components/`). Elles gardent le module standard `logging` (`_LOGGER = logging.getLogger(__name__)`), car c'est lui que la configuration `logger:` de Home Assistant pilote. Les autres règles s'y appliquent à l'identique, avec `_LOGGER`.
+
+Règles, vérifiées par analyse AST dans les tests de chaque dépôt (modèles : Netcross `tests/test_loguru_regles.py` et `tests/test_loguru_formatting.py`, Gcm4 `tests/test_loguru_regles.py` et `scripts/audit_debug_sorties.py`) :
+
+1. **Entrée et sorties** : toute fonction ou méthode non triviale émet un `debug()` en entrée, avec ses paramètres significatifs résumés (tailles, types, jamais un secret), et un `debug()` juste avant chaque sortie (chaque `return`, la fin implicite, et chaque `raise` volontaire). Exemptées : fonctions vides, accesseurs d'une ligne. Sur un chemin chaud (appelé à chaque paquet, ligne, événement), la trace d'entrée passe en `trace()` ou est omise, et seuls les refus sont tracés (Netcross #441).
+2. **`except`** : chaque bloc `except` contient un appel de journal ; jamais d'exception avalée en silence.
+3. **Logger de module** : tout module qui définit des fonctions a un logger au niveau du module (`from loguru import logger`, ou `_LOGGER` pour Home Assistant).
+4. **Pas de `import logging`** hors Home Assistant.
+5. **Format** : loguru utilise les placeholders `{}` avec autant d'arguments que de `{}` ; jamais de `%s`/`%d`, que loguru n'interprète pas. À l'inverse, `logging` (Home Assistant) utilise `%s` avec des arguments, jamais de f-string dans l'appel.
+6. **Secrets** : aucun mot de passe, jeton, clé ou cookie dans un message ; `bool(x)`, `len(x)` ou `***` à la place.
+7. Les messages de journal sont en français et ne sont pas traduits.
+
+Un dépôt qui ne respecte pas encore ces règles fige ses écarts dans une référence versionnée (par exemple `scripts/audit_debug_sorties.baseline`) : le test échoue si le compte augmente, et la référence est baissée à chaque PR qui instrumente du code. Le compte doit atteindre zéro.
