@@ -64,3 +64,13 @@ Les [rulesets d'organisation](https://docs.github.com/fr/organizations/managing-
 - l'**audit** quotidien.
 
 Avec l'offre GitHub Team, les protections du paragraphe 3 pourraient devenir un ruleset ciblant tous les dépôts (`~ALL`), branches `main` et `dev`.
+
+## 7. Journalisation des authentifications (convention par défaut)
+
+Toute intégration ou script de l'équipe qui s'authentifie auprès d'un service suit la même règle :
+
+- tant qu'aucune connexion n'a réussi — et après chaque nouvel échec —, les étapes d'authentification sont tracées au niveau **INFO** : visibles dans le journal sans activer les logs de debug ;
+- après une première connexion réussie, elles passent au niveau **DEBUG** ;
+- tout échec réactive le mode bavard.
+
+Un échec de connexion ne doit jamais rester silencieux : l'exception est journalisée avec sa cause exacte (DNS, TLS, délai dépassé…), sans jamais y inclure mots de passe, cookies ou données de compte. Référence d'implémentation : Besancon-Emoi #21 (helper `_auth_log` dans `api.py`).
