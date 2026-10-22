@@ -49,6 +49,15 @@ Conventions des workflows :
 - `actions/checkout@v7` et `astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0`, puis `uv python install` ;
 - les versions des outils sont figées (yamllint, ESPHome…) et ne montent que volontairement.
 
+### Couverture des tests : 95 % minimum (décision du 21/10/2026, #9)
+
+- **Seuil bloquant ≥ 95 %**, lignes **et** branches (`branch = true`). Il est appliqué par le job « Qualité », ou par le job de couverture combinée s'il est requis sur `dev`, ainsi que par la même commande dans le `Makefile`. Une PR qui fait passer la couverture sous le seuil en vigueur échoue au job requis sur `dev`.
+- **Seuil déclaré une seule fois** : `fail_under = 95` dans `[tool.coverage.report]` de `pyproject.toml` pour Python, et les options `--test-coverage-*` de `npm run test:coverage` pour Node. Le CI et le `Makefile` le lisent, sans valeur recopiée. Modèle : `modele-depot` (`pyproject.toml`, `Makefile`, job « Qualité » de `ci.yml`).
+- **Le code d'interface compte.** GTK et Electron sont mesurés par le job graphique (Xvfb) et combinés (`coverage combine`). On ne les exclut pas pour atteindre le seuil.
+- **Exclusions limitées au code réellement inatteignable en test** (`omit`, `# pragma: no cover`) : garde `if __name__ == "__main__"`, branche propre à une plateforme… Chacune est justifiée par un commentaire.
+- **Paliers pour un dépôt sous 95 %** : le seuil est d'abord fixé à la mesure du moment (entier inférieur), pour qu'aucune régression ne soit possible, puis relevé à chaque PR de tests jusqu'à 95 %. Le palier en vigueur est noté dans l'issue de suivi du dépôt.
+- Tests lancés comme des scripts (sans pytest) : chaque script tourne sous `coverage run`, puis `coverage combine` et `coverage report` lisent le même `fail_under`. Exemple : `gcm-redfish-core` (gcm-redfish-core#7).
+
 ## 5. Nouveau dépôt : marche à suivre
 
 1. GitHub → **New repository** → *Repository template* : **`Mathilde-Team/modele-depot`** (ou `gh repo create Mathilde-Team/<nom> --public --template Mathilde-Team/modele-depot`).
