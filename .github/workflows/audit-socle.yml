@@ -34,6 +34,8 @@ jobs:
       - name: Installation de Python
         run: uv python install
 
+      # Rapport écrit hors du dépôt ($RUNNER_TEMP) : rien à ignorer dans
+      # .gitignore, qui reste identique à celui de modele-depot (#15).
       - name: Audit et issue de suivi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -41,5 +43,5 @@ jobs:
           uv run --no-project python scripts/audit_socle.py \
             --org "${{ github.repository_owner }}" \
             --issue "${{ github.repository }}" \
-            --sortie rapport.md --rapport-seul
-          cat rapport.md >> "$GITHUB_STEP_SUMMARY"
+            --sortie "$RUNNER_TEMP/rapport.md" --rapport-seul
+          cat "$RUNNER_TEMP/rapport.md" >> "$GITHUB_STEP_SUMMARY"
