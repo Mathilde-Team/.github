@@ -1,0 +1,60 @@
+# Workflow réutilisable : retire les assignés des issues ouvertes sans activité
+# de leur part depuis `delai-heures` (24 h par défaut). Règles détaillées dans
+# scripts/desassigner_inactifs.py et SOCLE.md (§9).
+#
+# Appelé depuis chaque dépôt par .github/workflows/desassignation.yml, avec le
+# GITHUB_TOKEN du dépôt appelant : celui-ci doit accorder `issues: write`.
+name: Désassignation des issues inactives (réutilisable)
+
+"on":
+  workflow_call:
+    inputs:
+      delai-heures:
+        description: Heures sans activité de l'assigné avant le retrait
+        type: number
+        default: 24
+      label-exemption:
+        description: Label qui exempte une issue
+        type: string
+        default: garder-assignation
+      simulation:
+        description: N'écrit rien, affiche seulement les décisions
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  desassigner:
+    name: Désassignation des issues inactives
+    runs-on: ${{ fromJSON(vars.RUNS_ON_LINUX || '{"group":"maison","labels":["self-hosted","linux"]}') }}
+    steps:
+      - name: Checkout du socle
+        uses: actions/checkout@v7
+        with:
+          repository: Mathilde-Team/.github
+          ref: main
+          path: socle
+
+      - name: Installation de uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+
+      - name: Installation de Python
+        run: uv python install
+
+      - name: Retrait des assignés inactifs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DEPOT: ${{ github.repository }}
+          DELAI: ${{ inputs.delai-heures }}
+          LABEL: ${{ inputs.label-exemption }}
+          SIMULATION: ${{ inputs.simulation }}
+        run: |
+          options=()
+          if [ "$SIMULATION" = "true" ]; then options+=(--simulation); fi
+          uv run socle/scripts/desassigner_inactifs.py \
+            --depot "$DEPOT" --delai-heures "$DELAI" --label-exemption "$LABEL" \
+            --sortie rapport.md "${options[@]}"
+          cat rapport.md >> "$GITHUB_STEP_SUMMARY"

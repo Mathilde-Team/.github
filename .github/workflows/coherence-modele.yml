@@ -1,0 +1,50 @@
+# Contrôle quotidien de cohérence entre ce dépôt et modele-depot (SOCLE.md
+# §10). Tout fichier présent dans les deux doit être identique, sauf exception
+# de coherence-exceptions.json. Les écarts sont signalés dans l'issue
+# « Cohérence .github ↔ modele-depot », qui propose la version la plus récente
+# comme réponse par défaut et pose la question.
+name: Cohérence .github ↔ modele-depot
+
+"on":
+  schedule:
+    - cron: "53 6 * * *"
+  workflow_dispatch:
+    inputs:
+      simulation:
+        description: N'écrit rien, affiche seulement les divergences
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: coherence-modele
+  cancel-in-progress: false
+
+jobs:
+  coherence:
+    name: Cohérence avec modele-depot
+    runs-on: ${{ fromJSON(vars.RUNS_ON_LINUX || '{"group":"maison","labels":["self-hosted","linux"]}') }}
+    steps:
+      - name: Checkout du dépôt
+        uses: actions/checkout@v7
+
+      - name: Installation de uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+
+      - name: Installation de Python
+        run: uv python install
+
+      - name: Comparaison et issue de suivi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SIMULATION: ${{ github.event_name == 'workflow_dispatch' && inputs.simulation }}
+        run: |
+          options=()
+          if [ "$SIMULATION" = "true" ]; then options+=(--simulation); fi
+          uv run scripts/coherence_modele.py --issue "${{ github.repository }}" --sortie rapport.md "${options[@]}"
+          cat rapport.md >> "$GITHUB_STEP_SUMMARY"
