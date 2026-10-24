@@ -1,7 +1,9 @@
 """Tests de l'action espace-disque et de scripts/nettoyer_runner.sh (#12).
 
 Les scripts sont lancés dans des dossiers temporaires : aucun fichier réel du
-runner n'est touché, et Docker n'est jamais appelé (PATH sans docker).
+runner n'est touché, et le Docker réel n'est jamais appelé : NETTOYER_DOCKER
+désigne une commande absente ou un faux docker, même si la machine (un runner
+de la CI par exemple) a docker dans /usr/bin.
 """
 
 import os
@@ -35,7 +37,8 @@ class TestEspaceDisque(unittest.TestCase):
 
     def test_pas_assez_de_place(self):
         with tempfile.TemporaryDirectory() as d:
-            r = lancer(ESPACE, d, 10**12)
+            env = {k: v for k, v in os.environ.items() if k != "RUNNER_NAME"}
+            r = lancer(ESPACE, d, 10**12, env=env)
         self.assertEqual(r.returncode, 1)
         self.assertIn("::error::", r.stdout)
         self.assertIn("runner inconnu", r.stdout)
@@ -73,8 +76,9 @@ class TestNettoyerRunner(unittest.TestCase):
         cache.mkdir(parents=True)
         (cache / "gros").write_bytes(b"0" * 2 * 1024 * 1024)
         (self.home / ".npm").mkdir()
-        # PATH sans docker, pour ne jamais toucher au Docker de la machine.
-        self.env = {"HOME": str(self.home), "PATH": "/usr/bin:/bin"}
+        # Commande docker absente, pour ne jamais toucher au Docker de la machine.
+        self.env = {"HOME": str(self.home), "PATH": "/usr/bin:/bin",
+                    "NETTOYER_DOCKER": "docker-absent-pour-les-tests"}
 
     def tearDown(self):
         self._tmp.cleanup()
@@ -108,7 +112,7 @@ class TestNettoyerRunner(unittest.TestCase):
         faux.mkdir()
         (faux / "docker").write_text("#!/bin/sh\necho \"docker $*\"\n")
         (faux / "docker").chmod(0o755)
-        self.env["PATH"] = f"{faux}:/usr/bin:/bin"
+        self.env["NETTOYER_DOCKER"] = str(faux / "docker")
         r = self.nettoyer("--docker")
         self.assertIn("docker system df", r.stdout)
         r = self.nettoyer("--docker", "--appliquer")

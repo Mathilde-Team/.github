@@ -91,13 +91,16 @@ for cache in "$HOME/.cache/uv" "$HOME/.npm" "$HOME/.cache/electron"; do
 done
 
 if (( docker )); then
+  # NETTOYER_DOCKER : commande docker à utiliser (docker par défaut). Les tests
+  # la remplacent pour ne jamais appeler le Docker réel de la machine.
+  docker_cmd="${NETTOYER_DOCKER:-docker}"
   echo "Docker (éléments inutilisés de plus de 72 h) :"
-  if ! command -v docker >/dev/null 2>&1; then
+  if ! command -v "$docker_cmd" >/dev/null 2>&1; then
     echo "  docker absent : étape ignorée"
   elif (( appliquer )); then
-    docker system prune -af --filter "until=72h"
+    "$docker_cmd" system prune -af --filter "until=72h"
   else
-    docker system df
+    "$docker_cmd" system df
   fi
 fi
 
