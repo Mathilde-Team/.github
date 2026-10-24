@@ -113,3 +113,13 @@ Une issue assignée reste libre pour l'équipe : **24 h sans activité de l'assi
 - **Exemption** : label `garder-assignation` sur l'issue. Les comptes bots (Copilot…) ne sont jamais retirés.
 
 Mise en œuvre : la logique est ici, dans le workflow réutilisable [`desassignation-inactifs.yml`](.github/workflows/desassignation-inactifs.yml) et le script [`scripts/desassigner_inactifs.py`](scripts/desassigner_inactifs.py). Chaque dépôt n'a qu'un petit appelant, `.github/workflows/desassignation.yml` (fourni par `modele-depot`), planifié toutes les heures avec `issues: write` : le `GITHUB_TOKEN` du dépôt suffit, aucun secret n'est nécessaire. Le lancement manuel (*Run workflow*) se fait par défaut en **simulation** : les décisions s'affichent dans le résumé du job, sans rien modifier.
+
+## 10. Cohérence entre `.github` et `modele-depot`
+
+Les deux dépôts partagent des fichiers : scripts du socle, workflows de garde et de protection, configuration. **Un fichier présent dans les deux doit y être identique.** Les différences voulues sont listées, avec leur raison, dans [`coherence-exceptions.json`](coherence-exceptions.json).
+
+Le workflow [`coherence-modele.yml`](.github/workflows/coherence-modele.yml) compare chaque jour les branches `main` des deux dépôts (et à chaque push sur `main` ici). En cas d'écart, l'issue « Cohérence .github ↔ modele-depot » est créée ou mise à jour. Un commentaire signale chaque nouvel écart, ce qui déclenche une notification.
+
+- **Réponse par défaut : la version la plus récente fait foi.** Elle est déterminée par le dernier commit qui modifie le fichier dans chaque dépôt, puis reportée dans l'autre dépôt. La question reste posée dans l'issue : on y répond quand ce choix ne convient pas.
+- **Écart voulu** : on l'ajoute à `coherence-exceptions.json`. Fermer l'issue sans corriger vaut aussi « écart accepté », tant que ces fichiers ne changent plus. Au moindre nouveau changement, la question est reposée.
+- L'issue se ferme d'elle-même quand tout redevient cohérent.
