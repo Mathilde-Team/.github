@@ -11,6 +11,7 @@ Dépôt de configuration de l'organisation **Mathilde-Team**.
 | [`scripts/audit_socle.py`](scripts/audit_socle.py) | Audit du socle sur tous les dépôts (bibliothèque standard) |
 | [`audit-exceptions.json`](audit-exceptions.json) | Exceptions assumées (forks sous GPL, dépôt de démonstration) |
 | `.github/workflows/audit-socle.yml` | Audit quotidien, avec rapport dans l'issue « Audit du socle qualité » |
+| [`scripts/resoudre_conflits_ia.py`](scripts/resoudre_conflits_ia.py) | Résolution des conflits simples par IA locale (Ollama), appelée par `maj-branches-reutilisable.yml` (SOCLE.md §11) |
 | [`.github/actions/espace-disque`](.github/actions/espace-disque/action.yml) | Action composite : échoue tôt, avec un message clair, si le runner a moins de 2 Go libres (#12) |
 | [`scripts/nettoyer_runner.sh`](scripts/nettoyer_runner.sh) | Nettoyage nocturne d'un runner « maison », à installer en cron par un administrateur (#12) |
 
