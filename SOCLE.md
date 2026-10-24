@@ -43,6 +43,7 @@ gh api -X PUT repos/Mathilde-Team/<depot>/branches/<branche>/protection \
 | `.github/workflows/guard-main.yml` | Fait échouer toute PR vers `main` qui ne vient pas de `dev` |
 | `.github/workflows/branch-protection.yml` | Compare chaque jour la protection réelle aux fichiers JSON versionnés (`scripts/check_branch_protection.py`) |
 | `.github/workflows/desassignation.yml` | Retire chaque heure les assignés inactifs depuis 24 h (§9), via le workflow réutilisable de ce dépôt |
+| `.github/workflows/maj-branches.yml` | Met à jour les PR vers `dev` à chaque avancée de `dev` (§11), via le workflow réutilisable de ce dépôt |
 
 Conventions des workflows :
 - runners auto-hébergés du groupe « maison » : `runs-on: ${{ fromJSON(vars.RUNS_ON_LINUX || '{"group":"maison","labels":["self-hosted","linux"]}') }}`. La variable `RUNS_ON_LINUX` permet de basculer sur d'autres runners, par exemple `"ubuntu-latest"` ;
@@ -113,3 +114,18 @@ Une issue assignée reste libre pour l'équipe : **24 h sans activité de l'assi
 - **Exemption** : label `garder-assignation` sur l'issue. Les comptes bots (Copilot…) ne sont jamais retirés.
 
 Mise en œuvre : la logique est ici, dans le workflow réutilisable [`desassignation-inactifs.yml`](.github/workflows/desassignation-inactifs.yml) et le script [`scripts/desassigner_inactifs.py`](scripts/desassigner_inactifs.py). Chaque dépôt n'a qu'un petit appelant, `.github/workflows/desassignation.yml` (fourni par `modele-depot`), planifié toutes les heures avec `issues: write` : le `GITHUB_TOKEN` du dépôt suffit, aucun secret n'est nécessaire. Le lancement manuel (*Run workflow*) se fait par défaut en **simulation** : les décisions s'affichent dans le résumé du job, sans rien modifier.
+
+## 11. Mise à jour automatique des branches de PR
+
+`dev` est protégée en `strict: true` (§3) : chaque fusion dans `dev` met les autres PR « en retard ». À chaque push sur `dev`, chaque PR ouverte vers `dev` est mise à jour (« Update branch »). Sont ignorées les PR en brouillon, venant d'un fork ou portant le label `pas-de-maj-auto`.
+
+- **Conflit** : le runner « maison » fusionne en style `diff3` et fait résoudre les conflits **simples** par l'IA locale (Ollama, variables d'organisation `OLLAMA_URL` et `OLLAMA_MODELE`). Garde-fous, en tout ou rien :
+  - au plus 3 fichiers, 6 blocs et 60 lignes par bloc ;
+  - verrous de dépendances, workflows et règles `branch-protection` exclus ;
+  - aucune ligne inventée : chaque ligne vient d'un des deux côtés ;
+  - le modèle peut répondre « non simple ».
+- **Résolu par l'IA** : commit poussé sur la branche, PR **repassée en brouillon** (non fusionnable sans relecture), label `resolu-par-ia` et commentaire détaillant chaque résolution. Relire, attendre la CI, puis *Ready for review*.
+- **Non résolu** : label `conflit` et un commentaire qui donne la raison. Le label est retiré dès qu'une mise à jour réussit.
+- **Jeton** : GitHub App de l'organisation (secrets `MAJ_APP_ID` et `MAJ_APP_CLE_PRIVEE` ; Contents, Pull requests, Issues en écriture). Un push fait avec `GITHUB_TOKEN` ne relancerait pas la CI, et la PR resterait bloquée sur le check requis.
+
+Mise en œuvre : workflow réutilisable [`maj-branches-reutilisable.yml`](.github/workflows/maj-branches-reutilisable.yml) et script [`scripts/resoudre_conflits_ia.py`](scripts/resoudre_conflits_ia.py). Chaque dépôt n'a qu'un petit appelant, `.github/workflows/maj-branches.yml`, fourni par `modele-depot`. Sans `OLLAMA_URL`, seules les mises à jour sont faites, et les conflits sont signalés.
