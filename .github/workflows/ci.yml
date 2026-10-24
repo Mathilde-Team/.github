@@ -34,10 +34,10 @@ jobs:
       - name: Syntaxe des scripts Python
         run: uv run --no-project python -m py_compile scripts/*.py
 
-      - name: Tests (unittest)
-        run: |
-          if [ -d tests ]; then
-            uv run --no-project python -m unittest discover -s tests -v
-          else
-            echo "Pas de dossier tests/ : à ajouter."
-          fi
+      # Tests et couverture (SOCLE.md §4) : seuil bloquant de 95 %, branches
+      # comprises, déclaré une seule fois dans pyproject.toml
+      # ([tool.coverage.report] fail_under, [tool.coverage.run] branch) ; la
+      # commande ne recopie aucune valeur. Projet non Python : garder le nom du
+      # job et remplacer cette étape par l'équivalent (npm run test:coverage…).
+      - name: Tests et couverture (seuil lu dans pyproject.toml)
+        run: make test
