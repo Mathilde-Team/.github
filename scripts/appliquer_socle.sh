@@ -80,3 +80,8 @@ PY
 done
 
 echo "Socle appliqué à $depot. Vérification : workflow « Protection des branches »."
+# Rappel de la règle de couverture (SOCLE.md §4, Mathilde-Team/.github#9) :
+# elle n'est pas appliquée par ce script, mais par le job Qualité du dépôt.
+echo "Couverture : seuil bloquant 95 % (branches comprises), déclaré une fois dans pyproject.toml"
+echo "  ([tool.coverage.report] fail_under). Dépôt existant sous 95 % : fail_under = mesure du jour,"
+echo "  relevé à chaque PR de tests jusqu'à 95 ; palier et date cible dans l'issue de suivi."
