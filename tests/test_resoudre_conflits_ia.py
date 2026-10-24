@@ -228,6 +228,9 @@ class Principal(unittest.TestCase):
     def test_reglages_absents(self):
         self.assertEqual(r.main({}), 1)
 
+    def test_mode_debug(self):
+        self.assertEqual(r.main({"SOCLE_DEBUG": "1"}), 1)
+
     def test_environnement_du_processus(self):
         with mock.patch.dict(os.environ, {}, clear=True):
             self.assertEqual(r.main(), 1)

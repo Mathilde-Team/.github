@@ -28,6 +28,7 @@ Variables d'environnement :
   IA_MAX_LIGNES     défaut 60 (par côté et par bloc)
   IA_DELAI          délai max d'une réponse Ollama en secondes (défaut 900, CPU seul)
   IA_RESUME         fichier Markdown du résumé (défaut resume-ia.md)
+  SOCLE_DEBUG       1 pour afficher les traces de debug (SOCLE §8)
 """
 
 from __future__ import annotations
@@ -317,9 +318,12 @@ def ecrire(contenus: dict[str, list]) -> None:
 
 def main(env: dict[str, str] | None = None) -> int:
     """Point d'entrée ; renvoie le code de sortie (0, 1 ou 2)."""
+    env = dict(os.environ) if env is None else env
+    logger.remove()
+    logger.add(sys.stderr, level="DEBUG" if env.get("SOCLE_DEBUG") else "WARNING")
     logger.debug("Démarrage de la résolution IA")
     try:
-        reglages = lire_reglages(dict(os.environ) if env is None else env)
+        reglages = lire_reglages(env)
     except ValueError as exc:
         logger.error("{}", exc)
         logger.debug("Sortie main : code 1")
