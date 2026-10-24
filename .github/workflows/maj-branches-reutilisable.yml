@@ -66,6 +66,33 @@ jobs:
           ref: main
           path: .socle
 
+      - name: GitHub CLI (version figée si absente du runner)
+        # Issue #20 : le runner maison « ubuntu » n'a pas gh (« gh: commande
+        # introuvable », code 127). Installation dans $RUNNER_TEMP (vidé par le
+        # runner), sans sudo, archive vérifiée par SHA-256.
+        env:
+          GH_VERSION: "2.103.2"
+          GH_SHA256_AMD64: 62ccf747115ddc61237efffdde66a3c8f70ba249433dc64f70801089b59c59c8
+          GH_SHA256_ARM64: 4c3e99a50bd8b181a3fe9d69b25dd978bac768148d88f01507c6b4d1ef61a443
+        run: |
+          set -euo pipefail
+          if command -v gh >/dev/null; then gh --version | head -1; exit 0; fi
+          case "$(uname -m)" in
+            x86_64) arch=amd64; sha="$GH_SHA256_AMD64" ;;
+            aarch64 | arm64) arch=arm64; sha="$GH_SHA256_ARM64" ;;
+            *) echo "::error::architecture $(uname -m) non prise en charge pour gh"; exit 1 ;;
+          esac
+          nom="gh_${GH_VERSION}_linux_${arch}"
+          dest="$RUNNER_TEMP/gh"
+          mkdir -p "$dest"
+          curl -fsSL --retry 3 -o "$dest/$nom.tar.gz" \
+            "https://github.com/cli/cli/releases/download/v${GH_VERSION}/${nom}.tar.gz"
+          echo "$sha  $dest/$nom.tar.gz" | sha256sum -c -
+          tar -xzf "$dest/$nom.tar.gz" -C "$dest"
+          rm -f "$dest/$nom.tar.gz"
+          echo "$dest/$nom/bin" >> "$GITHUB_PATH"
+          "$dest/$nom/bin/gh" --version | head -1
+
       - name: Installation de uv
         if: vars.OLLAMA_URL != ''
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
