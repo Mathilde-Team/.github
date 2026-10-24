@@ -11,6 +11,7 @@ Dépôt de configuration de l'organisation **Mathilde-Team**.
 | [`scripts/audit_socle.py`](scripts/audit_socle.py) | Audit du socle sur tous les dépôts (bibliothèque standard) |
 | [`audit-exceptions.json`](audit-exceptions.json) | Exceptions assumées (forks sous GPL, dépôt de démonstration) |
 | `.github/workflows/audit-socle.yml` | Audit quotidien, avec rapport dans l'issue « Audit du socle qualité » |
+| [`scripts/resoudre_conflits_ia.py`](scripts/resoudre_conflits_ia.py) | Résolution des conflits simples par IA locale (Ollama), appelée par `maj-branches-reutilisable.yml` (SOCLE.md §11) |
 
 Nouveau dépôt : partir du modèle [`modele-depot`](https://github.com/Mathilde-Team/modele-depot), puis lancer `scripts/appliquer_socle.sh`. La marche à suivre est décrite dans [SOCLE.md](SOCLE.md#5-nouveau-dépôt--marche-à-suivre).
 
