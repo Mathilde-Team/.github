@@ -1,0 +1,134 @@
+# Workflow RÉUTILISABLE : met à jour (« Update branch ») les PR ouvertes vers
+# une branche quand celle-ci avance, et tente de résoudre les conflits SIMPLES
+# avec un LLM local (Ollama) si la variable OLLAMA_URL est définie (SOCLE.md §11).
+#
+# Pourquoi : `dev` est protégée en `strict: true` (SOCLE.md §3), donc chaque
+# fusion dans `dev` met toutes les autres PR « en retard ».
+#
+# Appel depuis un dépôt (.github/workflows/maj-branches.yml) :
+#   jobs:
+#     maj:
+#       uses: Mathilde-Team/.github/.github/workflows/maj-branches-reutilisable.yml@main
+#       secrets: inherit
+#
+# Prérequis (organisation) :
+#   - une GitHub App (Contents, Pull requests, Issues : lecture/écriture),
+#     installée sur les dépôts ; secrets MAJ_APP_ID et MAJ_APP_CLE_PRIVEE.
+#     Un push fait avec GITHUB_TOKEN ne relancerait pas la CI : la PR resterait
+#     bloquée sur le check requis « Qualité (…) ».
+#   - IA (facultatif) : variables OLLAMA_URL et OLLAMA_MODELE. Le job IA tourne
+#     TOUJOURS sur le groupe « maison », seul à voir Ollama sur le réseau local.
+name: Mise à jour des branches de PR (réutilisable)
+
+"on":
+  workflow_call:
+    inputs:
+      base:
+        description: Branche cible des PR à mettre à jour
+        type: string
+        default: dev
+      etiquette_exclusion:
+        description: PR portant cette étiquette ignorées
+        type: string
+        default: pas-de-maj-auto
+    secrets:
+      MAJ_APP_ID:
+        required: true
+      MAJ_APP_CLE_PRIVEE:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  maj:
+    name: Mise à jour des PR vers ${{ inputs.base }}
+    runs-on: { group: maison, labels: [self-hosted, linux] }
+    timeout-minutes: 60
+    steps:
+      - name: Jeton de la GitHub App
+        id: app
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.MAJ_APP_ID }}
+          private-key: ${{ secrets.MAJ_APP_CLE_PRIVEE }}
+
+      - name: Checkout du dépôt
+        uses: actions/checkout@v7
+        with:
+          token: ${{ steps.app.outputs.token }}
+          fetch-depth: 0
+
+      - name: Checkout des scripts du socle
+        uses: actions/checkout@v7
+        with:
+          repository: Mathilde-Team/.github
+          ref: main
+          path: .socle
+
+      - name: Installation de uv
+        if: vars.OLLAMA_URL != ''
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+
+      - name: Mise à jour, puis résolution IA des conflits simples
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          BASE: ${{ inputs.base }}
+          EXCLUSION: ${{ inputs.etiquette_exclusion }}
+          APP_SLUG: ${{ steps.app.outputs.app-slug }}
+          OLLAMA_URL: ${{ vars.OLLAMA_URL }}
+          OLLAMA_MODELE: ${{ vars.OLLAMA_MODELE || 'qwen2.5-coder:14b' }}
+        run: |
+          set -uo pipefail
+          depot="$GITHUB_REPOSITORY"
+          id_bot="$(gh api "/users/${APP_SLUG}%5Bbot%5D" --jq .id)"
+          git config user.name "${APP_SLUG}[bot]"
+          git config user.email "${id_bot}+${APP_SLUG}[bot]@users.noreply.github.com"
+          gh label create conflit --color B60205 --description "Conflit à résoudre à la main" --force >/dev/null
+          gh label create resolu-par-ia --color FBCA04 --description "Conflit résolu par l'IA locale : relire" --force >/dev/null
+
+          gh pr list --base "$BASE" --state open --limit 100 \
+            --json number,headRefName,headRefOid,isDraft,isCrossRepository,labels \
+            --jq ".[] | select(.isDraft|not) | select(.isCrossRepository|not)
+                 | select([.labels[].name] | index(\"$EXCLUSION\") | not)
+                 | [.number, .headRefName, .headRefOid, ([.labels[].name] | join(\",\"))] | @tsv" > prs.tsv
+
+          while IFS=$'\t' read -r n tete sha etiquettes; do
+            retard="$(gh api "repos/$depot/compare/${sha}...${BASE}" --jq .ahead_by)"
+            [ "${retard:-0}" -gt 0 ] || { echo "#$n à jour"; continue; }
+            if sortie="$(gh pr update-branch "$n" 2>&1)"; then
+              echo "#$n mise à jour ($retard commit(s) de $BASE)"
+              case ",$etiquettes," in *,conflit,*) gh pr edit "$n" --remove-label conflit ;; esac
+              continue
+            fi
+            echo "#$n : $sortie"
+            case "$sortie" in *onflict*) ;; *) continue ;; esac
+            case ",$etiquettes," in *,conflit,*) echo "#$n déjà signalée"; continue ;; esac
+
+            if [ -n "$OLLAMA_URL" ]; then
+              git fetch -q origin "$BASE" "$tete"
+              git checkout -q -B "$tete" "origin/$tete"
+              if git -c merge.conflictStyle=diff3 merge --no-ff --no-edit "origin/$BASE" >/dev/null 2>&1; then
+                code=0   # fusion propre côté git (cas rare)
+                echo "Fusion sans conflit de contenu." > resume-ia.md
+              else
+                IA_RESUME=resume-ia.md uv run .socle/scripts/resoudre_conflits_ia.py; code=$?
+              fi
+              if [ "$code" -eq 0 ]; then
+                git commit -q --no-edit -m "Fusion de $BASE dans $tete (conflits simples résolus par IA locale : $OLLAMA_MODELE)" || true
+                if git push -q origin "HEAD:$tete"; then
+                  gh pr ready "$n" --undo || true   # brouillon : impossible à fusionner sans relecture
+                  gh pr edit "$n" --add-label resolu-par-ia
+                  gh pr comment "$n" --body-file resume-ia.md
+                  rm -f resume-ia.md; git checkout -q --detach; continue
+                fi
+              fi
+              git merge --abort 2>/dev/null || true
+              git checkout -q --detach
+            fi
+            gh pr edit "$n" --add-label conflit
+            { echo "Mise à jour automatique impossible : conflit avec \`$BASE\`."; \
+              [ -f resume-ia.md ] && cat resume-ia.md; } > message.md
+            gh pr comment "$n" --body-file message.md
+            rm -f resume-ia.md message.md
+          done < prs.tsv
