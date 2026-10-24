@@ -1,0 +1,32 @@
+# Action composite du socle (#12) : échouer tout de suite, avec un message
+# clair, quand le runner n'a plus assez d'espace libre, au lieu d'un plantage
+# peu lisible plus loin (renderer Electron « crashed (code 133) », IAO#281).
+#
+# Usage, en tête des jobs lourds (harnais Electron, GTK4, paquets) :
+#
+#   - name: Espace disque suffisant
+#     uses: Mathilde-Team/.github/.github/actions/espace-disque@main
+#     with:
+#       minimum-mo: 2048
+name: Espace disque suffisant
+description: Échoue si l'espace libre du runner est sous le minimum demandé.
+
+inputs:
+  minimum-mo:
+    description: "Espace libre minimal, en Mo (2 Go par défaut, #12)."
+    required: false
+    default: "2048"
+  chemin:
+    description: Dossier dont le système de fichiers est mesuré ($RUNNER_TEMP par défaut).
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Mesure de l'espace libre
+      shell: bash
+      env:
+        MINIMUM_MO: ${{ inputs.minimum-mo }}
+        CHEMIN: ${{ inputs.chemin }}
+      run: '"$GITHUB_ACTION_PATH/espace_disque.sh" "${CHEMIN:-$RUNNER_TEMP}" "$MINIMUM_MO"'
