@@ -139,3 +139,5 @@ Le workflow [`coherence-modele.yml`](.github/workflows/coherence-modele.yml) com
 - **Jeton** : GitHub App de l'organisation (secrets `MAJ_APP_ID` et `MAJ_APP_CLE_PRIVEE` ; Contents, Pull requests, Issues en écriture). Un push fait avec `GITHUB_TOKEN` ne relancerait pas la CI, et la PR resterait bloquée sur le check requis.
 
 Mise en œuvre : workflow réutilisable [`maj-branches-reutilisable.yml`](.github/workflows/maj-branches-reutilisable.yml) et script [`scripts/resoudre_conflits_ia.py`](scripts/resoudre_conflits_ia.py). Chaque dépôt n'a qu'un petit appelant, `.github/workflows/maj-branches.yml`, fourni par `modele-depot`. Sans `OLLAMA_URL`, seules les mises à jour sont faites, et les conflits sont signalés.
+
+La CLI `gh` n'a pas à être pré-installée sur les runners : le workflow l'installe à la volée si elle est absente (version épinglée, somme SHA-256 vérifiée, sous `$RUNNER_TEMP` — rien de durable sur la machine). Correctif de l'issue #22, où le runner Q35 sans `gh` faisait échouer le job (exit 127).
