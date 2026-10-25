@@ -42,6 +42,7 @@ gh api -X PUT repos/Mathilde-Team/<depot>/branches/<branche>/protection \
 | `.github/workflows/ci.yml` | Job **« Qualité (…) »** : lint, format, tests, propres à chaque langage |
 | `.github/workflows/guard-main.yml` | Fait échouer toute PR vers `main` qui ne vient pas de `dev` |
 | `.github/workflows/branch-protection.yml` | Compare chaque jour la protection réelle aux fichiers JSON versionnés (`scripts/check_branch_protection.py`) |
+| `.github/workflows/desassignation.yml` | Retire chaque heure les assignés inactifs depuis 24 h (§9), via le workflow réutilisable de ce dépôt |
 | `.github/workflows/maj-branches.yml` | Met à jour les PR vers `dev` à chaque avancée de `dev` (§11), via le workflow réutilisable de ce dépôt |
 
 Conventions des workflows :
@@ -103,6 +104,27 @@ Règles, vérifiées par analyse AST dans les tests de chaque dépôt (modèles 
 
 Un dépôt qui ne respecte pas encore ces règles fige ses écarts dans une référence versionnée (par exemple `scripts/audit_debug_sorties.baseline`) : le test échoue si le compte augmente, et la référence est baissée à chaque PR qui instrumente du code. Le compte doit atteindre zéro.
 
+## 9. Désassignation automatique des issues inactives
+
+Une issue assignée reste libre pour l'équipe : **24 h sans activité de l'assigné**, et l'assignation est retirée automatiquement.
+
+- **Compteur** : il part de la dernière assignation de la personne et repart de zéro à chacune de ses actions sur l'issue (commentaire, commit ou PR qui référence l'issue, label, modification…). L'activité des autres ne compte pas.
+- **PR ouverte** : une PR ouverte par l'assigné qui référence l'issue suspend le retrait (travail en cours).
+- **Retrait** : l'assigné est retiré et un commentaire, qui le mentionne, explique pourquoi. Pour reprendre l'issue, il suffit de se réassigner.
+- **Exemption** : label `garder-assignation` sur l'issue. Les comptes bots (Copilot…) ne sont jamais retirés.
+
+Mise en œuvre : la logique est ici, dans le workflow réutilisable [`desassignation-inactifs.yml`](.github/workflows/desassignation-inactifs.yml) et le script [`scripts/desassigner_inactifs.py`](scripts/desassigner_inactifs.py). Chaque dépôt n'a qu'un petit appelant, `.github/workflows/desassignation.yml` (fourni par `modele-depot`), planifié toutes les heures avec `issues: write` : le `GITHUB_TOKEN` du dépôt suffit, aucun secret n'est nécessaire. Le lancement manuel (*Run workflow*) se fait par défaut en **simulation** : les décisions s'affichent dans le résumé du job, sans rien modifier.
+
+## 10. Cohérence entre `.github` et `modele-depot`
+
+Les deux dépôts partagent des fichiers : scripts du socle, workflows de garde et de protection, configuration. **Un fichier présent dans les deux doit y être identique.** Les différences voulues sont listées, avec leur raison, dans [`coherence-exceptions.json`](coherence-exceptions.json).
+
+Le workflow [`coherence-modele.yml`](.github/workflows/coherence-modele.yml) compare chaque jour les branches `main` des deux dépôts (et à chaque push sur `main` ici). En cas d'écart, l'issue « Cohérence .github ↔ modele-depot » est créée ou mise à jour. Un commentaire signale chaque nouvel écart, ce qui déclenche une notification.
+
+- **Réponse par défaut : la version la plus récente fait foi.** Elle est déterminée par le dernier commit qui modifie le fichier dans chaque dépôt, puis reportée dans l'autre dépôt. La question reste posée dans l'issue : on y répond quand ce choix ne convient pas.
+- **Écart voulu** : on l'ajoute à `coherence-exceptions.json`. Fermer l'issue sans corriger vaut aussi « écart accepté », tant que ces fichiers ne changent plus. Au moindre nouveau changement, la question est reposée.
+- L'issue se ferme d'elle-même quand tout redevient cohérent.
+
 ## 11. Mise à jour automatique des branches de PR
 
 `dev` est protégée en `strict: true` (§3) : chaque fusion dans `dev` met les autres PR « en retard ». À chaque push sur `dev`, chaque PR ouverte vers `dev` est mise à jour (« Update branch »). Sont ignorées les PR en brouillon, venant d'un fork ou portant le label `pas-de-maj-auto`.
@@ -117,3 +139,5 @@ Un dépôt qui ne respecte pas encore ces règles fige ses écarts dans une réf
 - **Jeton** : GitHub App de l'organisation (secrets `MAJ_APP_ID` et `MAJ_APP_CLE_PRIVEE` ; Contents, Pull requests, Issues en écriture). Un push fait avec `GITHUB_TOKEN` ne relancerait pas la CI, et la PR resterait bloquée sur le check requis.
 
 Mise en œuvre : workflow réutilisable [`maj-branches-reutilisable.yml`](.github/workflows/maj-branches-reutilisable.yml) et script [`scripts/resoudre_conflits_ia.py`](scripts/resoudre_conflits_ia.py). Chaque dépôt n'a qu'un petit appelant, `.github/workflows/maj-branches.yml`, fourni par `modele-depot`. Sans `OLLAMA_URL`, seules les mises à jour sont faites, et les conflits sont signalés.
+
+La CLI `gh` n'a pas à être pré-installée sur les runners : le workflow l'installe à la volée si elle est absente (version épinglée, somme SHA-256 vérifiée, sous `$RUNNER_TEMP` — rien de durable sur la machine). Correctif de l'issue #22, où le runner Q35 sans `gh` faisait échouer le job (exit 127).

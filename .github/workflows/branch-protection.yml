@@ -40,4 +40,9 @@ jobs:
       - name: Comparaison avec .github/branch-protection/${{ matrix.branche }}.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: uv run --no-project python scripts/check_branch_protection.py --branche ${{ matrix.branche }}
+        # --with loguru : le script journalise avec loguru (SOCLE §8, PR #8)
+        # mais --no-project n'installe pas les dépendances du pyproject ;
+        # sans cela, ModuleNotFoundError: No module named 'loguru' sur les
+        # runners maison (échec des checks « Protection … conforme à la
+        # règle versionnée » depuis la PR #8).
+        run: uv run --no-project --with loguru python scripts/check_branch_protection.py --branche ${{ matrix.branche }}
