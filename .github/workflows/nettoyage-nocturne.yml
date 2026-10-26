@@ -1,0 +1,38 @@
+# Nettoyage nocturne des runners maison (#12) : tâche planifiée de l'issue,
+# en workflow plutôt qu'en cron installé à la main sur les machines.
+#
+# Exécute scripts/nettoyer_runner.sh (livré par la PR #19) sur chaque runner
+# de la machine qui fait tourner ce job, via scripts/nettoyer_tous_runners.sh
+# (découverte des racines : runner courant via $RUNNER_TEMP + sœurs contenant
+# _work/). Trois passages nocturnes car un run = UN runner du groupe « maison »
+# : les machines distinctes sont nettoyées chacune en moyenne tous les quelques
+# soirs. workflow_dispatch permet aussi de déclencher à la demande (par exemple
+# juste après un disque plein, cf. RunnerMaison-2 le 22/10/2026).
+#
+# Ce workflow ne s'exécute (schedule) que présent sur la branche par défaut
+# (main) : la PR dev → main reste relue par un humain.
+name: Nettoyage nocturne des runners maison
+
+"on":
+  schedule:
+    - cron: "17 2,3,4 * * *"   # 3 passages : 03:17, 04:17, 05:17 heure de Paris (hiver)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  nettoyage:
+    name: Nettoyage des runners
+    runs-on: ${{ fromJSON(vars.RUNS_ON_LINUX || '{"group":"maison","labels":["self-hosted","linux"]}') }}
+    timeout-minutes: 20
+    steps:
+      - name: Checkout du dépôt
+        uses: actions/checkout@v7
+
+      # --appliquer : supprime réellement (espaces de travail inactifs depuis
+      # 7 jours, journaux _diag > 7 jours, caches > 4 Go, Docker inutilisé
+      # depuis 72 h). Le job courant travaille dans _work/.github : frais, il
+      # n'est jamais concerné. Docker absent d'une machine : étape ignorée.
+      - name: Nettoyage des runners de la machine
+        run: scripts/nettoyer_tous_runners.sh --appliquer --docker
