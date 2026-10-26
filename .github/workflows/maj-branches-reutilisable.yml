@@ -144,7 +144,12 @@ jobs:
                 code=0   # fusion propre côté git (cas rare)
                 echo "Fusion sans conflit de contenu." > resume-ia.md
               else
-                IA_RESUME=resume-ia.md uv run .socle/scripts/resoudre_conflits_ia.py; code=$?
+                # Exit 2 du script = conflit non simple : attendu, on étiquette la PR.
+                # Ne pas écrire « … ; code=$? » : GitHub exécute ce bloc avec
+                # « bash -e » (voir l'issue #25) et l'exécution s'arrêterait avant
+                # le code=$?, faisant échouer le job au lieu d'étiqueter.
+                code=0
+                IA_RESUME=resume-ia.md uv run .socle/scripts/resoudre_conflits_ia.py || code=$?
               fi
               if [ "$code" -eq 0 ]; then
                 git commit -q --no-edit -m "Fusion de $BASE dans $tete (conflits simples résolus par IA locale : $OLLAMA_MODELE)" || true
