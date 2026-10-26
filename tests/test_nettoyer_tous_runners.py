@@ -95,6 +95,27 @@ class TestNettoyerTousRunners(unittest.TestCase):
             self.assertTrue((base / "runner-b" / "_work" / "vieux-depot").exists())
             self.assertIn("[simulation]", resultat.stdout)
 
+    def test_executable_directement_comme_le_workflow(self):
+        """Le workflow lance `scripts/nettoyer_tous_runners.sh` sans `bash` :
+        le bit exécutable doit être présent (sinon Permission denied, que les
+        autres tests — via `bash script` — ne voient pas)."""
+        self.assertTrue(os.access(TOUS, os.X_OK), f"{TOUS} doit être exécutable (git update-index --chmod=+x)")
+        with tempfile.TemporaryDirectory() as brut:
+            base = Path(brut)
+            temp_a, _ = monter_arbre(base)
+            maison = Path(brut)
+            env = {
+                **os.environ,
+                "RUNNER_TEMP": str(temp_a),
+                "HOME": str(maison),
+                "NETTOYER_DOCKER": "docker-toujours-absent-de-test",
+            }
+            # exécution DIRECTE (sans `bash`) : comme le workflow
+            resultat = subprocess.run(
+                [str(TOUS), "--docker"], capture_output=True, text=True, env=env, check=False
+            )
+            self.assertEqual(resultat.returncode, 0, resultat.stderr)
+
     def test_sans_runner_temp_erreur_claire(self):
         env = {k: v for k, v in os.environ.items() if k != "RUNNER_TEMP"}
         resultat = subprocess.run(
