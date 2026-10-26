@@ -144,11 +144,15 @@ jobs:
                 code=0   # fusion propre côté git (cas rare)
                 echo "Fusion sans conflit de contenu." > resume-ia.md
               else
-                # Le script sort avec 2 PAR CONTRAT (« conflit jugé non simple »,
-                # cf. sa docstring) : `; code=$?` ne protège pas de `bash -e`
-                # (le shell meurt avant l'affectation, issue #25) — `|| code=$?`
-                # capture le code sans tuer le job. Seul le code 1 (erreur
-                # technique Ollama) reste bloquant, après nettoyage de l'état.
+                # `code=0` AVANT l'invocation : si le script réussit, le `||
+                # code=$?` n'exécute pas, et `code` resterait indéfini (set -u) ou
+                # garderait la valeur d'une PR précédente de la boucle. Le script
+                # sort avec 2 PAR CONTRAT (« conflit jugé non simple », cf. sa
+                # docstring) : `; code=$?` ne protège pas de `bash -e` (le shell
+                # meurt avant l'affectation, issue #25) — `|| code=$?` capture le
+                # code sans tuer le job. Seul le code 1 (erreur technique
+                # Ollama) reste bloquant, après nettoyage de l'état.
+                code=0
                 IA_RESUME=resume-ia.md uv run .socle/scripts/resoudre_conflits_ia.py || code=$?
               fi
               if [ "$code" -eq 1 ]; then
