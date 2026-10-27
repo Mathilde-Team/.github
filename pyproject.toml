@@ -4,6 +4,8 @@
 [project]
 name = "modele-depot"
 version = "0.0.0"
+# Licence de l'équipe (SOCLE.md §1).
+license = "GPL-3.0-or-later"
 description = "Modèle de dépôt Mathilde-Team : socle qualité prêt à l'emploi"
 requires-python = ">=3.12"
 dependencies = [

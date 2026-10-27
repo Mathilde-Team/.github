@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Tests de scripts/desassigner_inactifs.py (sans réseau)."""
 
 import io
