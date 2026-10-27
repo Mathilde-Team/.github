@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Tests de scripts/coherence_modele.py (sans réseau)."""
 
 import base64

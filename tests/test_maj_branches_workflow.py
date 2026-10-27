@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Tests d'exécution du script shell du workflow maj-branches-reutilisable.yml.
 
 GitHub exécute les blocs « run: » avec « bash -e » : une commande qui

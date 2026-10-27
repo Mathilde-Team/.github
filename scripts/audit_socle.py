@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Audit du socle qualité Mathilde-Team sur tous les dépôts de l'organisation.
 
 Contrôles par dépôt (voir SOCLE.md) :
-  licence    licence MIT détectée par GitHub (fichier LICENSE)
+  licence    licence GPL-3.0 détectée par GitHub (fichier LICENSE ; GitHub ne
+             distingue pas « -only » et « -or-later », portés par le SPDX)
   dev        branche `dev` présente
   main       branche par défaut `main` protégée, avec le check de garde
   garde      workflow .github/workflows/guard-main.yml présent
@@ -10,7 +12,9 @@ Contrôles par dépôt (voir SOCLE.md) :
   regles     règles versionnées .github/branch-protection/{main,dev}.json présentes
 
 Les exceptions assumées (licence d'origine d'un fork, dépôt de démonstration…)
-sont décrites dans audit-exceptions.json.
+sont décrites dans audit-exceptions.json. Une exception de licence peut être
+un texte (contrôle simplement assumé) ou un objet {"spdx": "MIT", "raison": …} :
+la licence détectée doit alors être celle-là.
 
 Écrit un rapport Markdown (sortie standard, ou --sortie). Code de sortie 1 si
 au moins un dépôt est non conforme. Bibliothèque standard uniquement.
@@ -31,6 +35,8 @@ from pathlib import Path
 API = "https://api.github.com"
 GARDE = "Garde : PR vers main doit venir de dev"
 CONTROLES = ["licence", "dev", "main", "garde", "dev-prot", "regles"]
+# Identifiant SPDX que GitHub renvoie pour le texte de la GPLv3 (SOCLE.md §1).
+LICENCE_ATTENDUE = "GPL-3.0"
 
 
 @dataclass
@@ -105,9 +111,15 @@ def auditer(client: Client, depot: dict, exceptions: dict) -> Resultat:
     q = urllib.parse.quote
 
     licence = (client.get(f"/repos/{nom}/license") or {}).get("license") or {}
-    res.controles["licence"] = licence.get("spdx_id") == "MIT"
+    attendue = LICENCE_ATTENDUE
+    exc_licence = exc.get("licence")
+    if isinstance(exc_licence, dict):
+        # Licence d'exception précise : elle est vérifiée, pas seulement assumée.
+        exc = {k: v for k, v in exc.items() if k != "licence"}
+        attendue = exc_licence.get("spdx") or LICENCE_ATTENDUE
+    res.controles["licence"] = licence.get("spdx_id") == attendue
     if not res.controles["licence"]:
-        res.notes.append(f"licence : {licence.get('spdx_id') or 'aucune'}")
+        res.notes.append(f"licence : {licence.get('spdx_id') or 'aucune'} (attendue : {attendue})")
 
     defaut = depot.get("default_branch")
     main = client.get(f"/repos/{nom}/branches/{q(defaut)}")

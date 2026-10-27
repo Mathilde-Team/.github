@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 # Nettoyage nocturne d'un runner auto-hébergé du groupe « maison » (#12).
 #
 # À installer par un administrateur sur la machine (ou dans le conteneur) du

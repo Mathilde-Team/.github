@@ -4,7 +4,7 @@ Dépôt de configuration de l'organisation **Mathilde-Team**.
 
 | Fichier | Rôle |
 |---|---|
-| [`SOCLE.md`](SOCLE.md) | **Socle qualité** commun : licence MIT, branches `main`/`dev`, protections, CI, garde |
+| [`SOCLE.md`](SOCLE.md) | **Socle qualité** commun : licence GPL-3.0-or-later et version, branches `main`/`dev`, protections, CI, garde |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Guide de contribution **par défaut** de tous les dépôts de l'organisation qui n'en ont pas |
 | [`PULL_REQUEST_TEMPLATE.md`](PULL_REQUEST_TEMPLATE.md) | Modèle de PR **par défaut** de tous les dépôts qui n'en ont pas |
 | `profile/README.md` | Page d'accueil publique de l'organisation |
@@ -41,4 +41,4 @@ scripts/nettoyer_runner.sh --runner /actions-runner --docker
 # crontab : 15 3 * * *  /chemin/nettoyer_runner.sh --runner /actions-runner --docker --appliquer
 ```
 
-Ce dépôt suit lui-même le socle : PR vers `dev`, puis `dev` → `main`. Licence [MIT](LICENSE).
+Ce dépôt suit lui-même le socle : PR vers `dev`, puis `dev` → `main`. Licence [GPL-3.0-or-later](LICENSE).
