@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Tests du client HTTP et de la ligne de commande de scripts/audit_socle.py.
 
 Aucun accès réseau : ``urllib.request.urlopen`` est remplacé par une fausse
@@ -121,7 +122,7 @@ def test_branche_par_defaut_autre_que_main():
     r = a.auditer(FauxClient({}), depot, {})
     assert r.controles["main"] is False
     assert "branche par défaut : master" in r.notes
-    assert "licence : aucune" in r.notes
+    assert "licence : aucune (attendue : GPL-3.0)" in r.notes
 
 
 def test_main_non_protegee_et_regles_illisibles():
@@ -138,7 +139,7 @@ def test_main_non_protegee_et_regles_illisibles():
 
 def test_exception_ignoree_si_controle_conforme_ou_inconnu():
     depot = {"name": "x", "full_name": "o/x", "default_branch": "main"}
-    reponses = {"/repos/o/x/license": {"license": {"spdx_id": "MIT"}}}
+    reponses = {"/repos/o/x/license": {"license": {"spdx_id": "GPL-3.0"}}}
     r = a.auditer(FauxClient(reponses), depot, {"x": {"licence": "inutile", "autre": "?"}})
     assert r.controles["licence"] is True
     assert not any(n.startswith("exception") for n in r.notes)
@@ -184,7 +185,7 @@ def org_conforme(reponses: dict) -> None:
     ]
     regle = {"protected": True, "protection": {"required_status_checks": {"checks": [{"context": a.GARDE}]}}}
     reponses.update({
-        "/repos/o/x/license": {"license": {"spdx_id": "MIT"}},
+        "/repos/o/x/license": {"license": {"spdx_id": "GPL-3.0"}},
         "/repos/o/x/branches/main": regle,
         "/repos/o/x/branches/dev": regle,
         "/repos/o/x/contents/.github/workflows/guard-main.yml": {"name": "guard-main.yml"},

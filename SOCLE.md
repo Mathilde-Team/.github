@@ -2,10 +2,26 @@
 
 Règles communes à toutes les productions de l'équipe, reprises de Gcm4, Netcross et SwitchCapture. Le dépôt [`modele-depot`](https://github.com/Mathilde-Team/modele-depot) les fournit prêtes à l'emploi. L'[audit quotidien](.github/workflows/audit-socle.yml) signale les dépôts non conformes dans l'issue « Audit du socle qualité ».
 
-## 1. Licence
+## 1. Licence et version
 
-- **MIT** pour toute production de l'équipe : fichier `LICENSE` à la racine, **texte MIT standard non modifié**, « Copyright (c) 2026 Mathilde Deuscher ». Toute ligne ajoutée au texte empêche GitHub de reconnaître la licence (il affiche alors NOASSERTION).
-- **Exception** : un fork ou un code dérivé garde la licence de son projet d'origine, car la GPL n'autorise pas de repasser le code en MIT. Les exceptions sont listées dans [`audit-exceptions.json`](audit-exceptions.json) (Gcm4, AsyncVnc4).
+### Licence : GPL-3.0-or-later par défaut (#30)
+
+- **GPL-3.0-or-later** pour toute production de l'équipe :
+  - fichier `LICENSE` à la racine : **texte officiel de la GPLv3, non modifié**. Toute ligne ajoutée au texte empêche GitHub de reconnaître la licence (il affiche alors NOASSERTION) ; GitHub l'identifie comme `GPL-3.0`, sans distinguer « -only » et « -or-later » ;
+  - le « ou toute version ultérieure » est porté par les métadonnées : `license = "GPL-3.0-or-later"` dans `pyproject.toml` (`"license": "GPL-3.0-or-later"` dans `package.json`) ;
+  - en-tête `# SPDX-License-Identifier: GPL-3.0-or-later` en tête de chaque fichier de code, de `scripts/` et de `tests/` (après le shebang s'il y en a un).
+- **Exceptions**, listées avec leur raison dans [`audit-exceptions.json`](audit-exceptions.json) :
+  - **intégrations Home Assistant** (dépôts HACS : Atmo-Qualite-Air, Besancon-Emoi, Ginko-Trafic, Tarif-Eau, Tarif-Energie, Vigicrues) : restent en **MIT**, comme l'écosystème HACS ;
+  - **IAO** : garde la **MIT** de son projet d'origine ;
+  - **Gcm4** : le code amont (kuthulux/gnome-connection-manager) reste en **GPL-3.0 seule** ; le code ajouté par l'équipe est en GPL-3.0-or-later ;
+  - plus généralement, un fork ou un code dérivé garde la licence de son projet d'origine (AsyncVnc4).
+- **Audit** : le contrôle « licence » attend `GPL-3.0`. Une exception écrite `{"spdx": "MIT", "raison": …}` impose et vérifie une autre licence ; une exception en simple texte rend le contrôle « assumé ».
+
+### Version : une seule source de vérité
+
+- La version du projet est déclarée **une seule fois**, dans `pyproject.toml` (`[project] version`). `package.json` et `manifest.json` (Home Assistant), s'il y en a, portent la même valeur, vérifiée par un test ou par le CI.
+- Format `X.Y.Z` ([SemVer](https://semver.org/lang/fr/)). Chaque livraison est marquée d'un tag **`vX.Y.Z`** posé sur le commit de release (celui qui arrive sur `main` par la PR `dev` → `main`).
+- Le modèle (`modele-depot`) et ce dépôt restent volontairement en `0.0.0` : ils ne sont pas livrés.
 
 ## 2. Branches
 
