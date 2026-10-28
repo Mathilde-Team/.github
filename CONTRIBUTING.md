@@ -24,4 +24,4 @@ gh pr create --base dev                         # PR vers dev, jamais vers main
 
 ## Licence
 
-Sauf mention contraire dans le dépôt (fork sous la licence de son projet d'origine), les contributions sont publiées sous **licence MIT**.
+Sauf mention contraire dans le dépôt, les contributions sont publiées sous **licence GPL-3.0-or-later**. Exceptions ([SOCLE.md §1](https://github.com/Mathilde-Team/.github/blob/main/SOCLE.md#1-licence-et-version)) : les intégrations Home Assistant et IAO restent en MIT, et un fork garde la licence de son projet d'origine (code amont de Gcm4 en GPL-3.0 seule).

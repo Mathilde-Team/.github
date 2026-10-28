@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Tests de scripts/audit_socle.py (sans réseau)."""
 
 import sys
@@ -25,7 +26,7 @@ def branche(*checks):
 
 DEPOT = {"name": "x", "full_name": "o/x", "default_branch": "main"}
 CONFORME = {
-    "/repos/o/x/license": {"license": {"spdx_id": "MIT"}},
+    "/repos/o/x/license": {"license": {"spdx_id": "GPL-3.0"}},
     "/repos/o/x/branches/main": branche(a.GARDE, "Qualité"),
     "/repos/o/x/branches/dev": branche("Qualité"),
     "/repos/o/x/contents/.github/workflows/guard-main.yml": {"name": "guard-main.yml"},
@@ -52,6 +53,45 @@ class TestAudit(unittest.TestCase):
         r = a.auditer(FauxClient(rep), DEPOT, {"x": {"licence": "fork"}})
         self.assertIsNone(r.controles["licence"])
         self.assertTrue(r.conforme)
+
+    def test_mit_non_conforme_par_defaut(self):
+        # SOCLE §1 : la GPL-3.0 est la règle, la MIT n'est plus conforme sans exception.
+        rep = dict(CONFORME, **{"/repos/o/x/license": {"license": {"spdx_id": "MIT"}}})
+        r = a.auditer(FauxClient(rep), DEPOT, {})
+        self.assertFalse(r.controles["licence"])
+        self.assertIn("licence : MIT (attendue : GPL-3.0)", r.notes)
+
+    def test_exception_licence_precise_verifiee(self):
+        rep = dict(CONFORME, **{"/repos/o/x/license": {"license": {"spdx_id": "MIT"}}})
+        exc = {"x": {"licence": {"spdx": "MIT", "raison": "intégration Home Assistant"}}}
+        r = a.auditer(FauxClient(rep), DEPOT, exc)
+        self.assertTrue(r.controles["licence"])
+        self.assertTrue(r.conforme)
+
+    def test_exception_licence_precise_non_respectee(self):
+        # L'exception MIT n'excuse pas une autre licence (ni l'absence de licence).
+        rep = dict(CONFORME, **{"/repos/o/x/license": {"license": {"spdx_id": "GPL-3.0"}}})
+        exc = {"x": {"licence": {"spdx": "MIT", "raison": "intégration Home Assistant"}}}
+        r = a.auditer(FauxClient(rep), DEPOT, exc)
+        self.assertFalse(r.controles["licence"])
+        self.assertIn("licence : GPL-3.0 (attendue : MIT)", r.notes)
+        self.assertFalse(any(n.startswith("exception licence") for n in r.notes))
+
+    def test_exception_licence_objet_sans_spdx(self):
+        # Objet sans « spdx » : retour à la licence attendue par défaut.
+        r = a.auditer(FauxClient(CONFORME), DEPOT, {"x": {"licence": {"raison": "?"}}})
+        self.assertTrue(r.controles["licence"])
+
+    def test_fichier_exceptions_du_depot(self):
+        # audit-exceptions.json reste lisible et cohérent avec SOCLE §1.
+        import json
+
+        chemin = Path(__file__).resolve().parents[1] / "audit-exceptions.json"
+        exc = json.loads(chemin.read_text(encoding="utf-8"))
+        self.assertEqual(exc["IAO"]["licence"]["spdx"], "MIT")
+        for depot in ("Atmo-Qualite-Air", "Besancon-Emoi", "Ginko-Trafic", "Tarif-Eau", "Tarif-Energie", "Vigicrues"):
+            self.assertEqual(exc[depot]["licence"]["spdx"], "MIT", depot)
+        self.assertIsInstance(exc["Gcm4"]["licence"], str)
 
     def test_main_sans_garde(self):
         rep = dict(CONFORME, **{"/repos/o/x/branches/main": branche("Qualité")})

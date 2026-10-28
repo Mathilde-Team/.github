@@ -144,7 +144,18 @@ jobs:
                 code=0   # fusion propre côté git (cas rare)
                 echo "Fusion sans conflit de contenu." > resume-ia.md
               else
-                IA_RESUME=resume-ia.md uv run .socle/scripts/resoudre_conflits_ia.py; code=$?
+                # Sorties du script IA : 0 = résolu, 2 = conflit non simple
+                # (attendu : on étiquette la PR), 1 = erreur technique — la PR
+                # ne doit PAS être étiquetée « conflit » pour autant : le job
+                # échoue. Ne pas écrire « … ; code=$? » : GitHub exécute ce
+                # bloc avec « bash -e » (issue #25) et l'exécution s'arrêterait
+                # avant le code=$?, faisant échouer le job sur l'exit 2 attendu.
+                code=0
+                IA_RESUME=resume-ia.md uv run .socle/scripts/resoudre_conflits_ia.py || code=$?
+                if [ "$code" -ne 0 ] && [ "$code" -ne 2 ]; then
+                  echo "::error::erreur technique du script de résolution IA (code $code, Ollama injoignable ?)"
+                  exit 1
+                fi
               fi
               if [ "$code" -eq 0 ]; then
                 git commit -q --no-edit -m "Fusion de $BASE dans $tete (conflits simples résolus par IA locale : $OLLAMA_MODELE)" || true

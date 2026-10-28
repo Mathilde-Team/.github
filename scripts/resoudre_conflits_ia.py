@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
 # /// script
 # requires-python = ">=3.10"
 # dependencies = ["loguru==0.7.3"]

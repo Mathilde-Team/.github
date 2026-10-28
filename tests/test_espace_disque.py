@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Tests de l'action espace-disque et de scripts/nettoyer_runner.sh (#12).
 
 Les scripts sont lancés dans des dossiers temporaires : aucun fichier réel du

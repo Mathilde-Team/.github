@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Tests de scripts/resoudre_conflits_ia.py (sans réseau : Ollama simulé, git local)."""
 
 import io
