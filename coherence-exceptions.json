@@ -1,4 +1,5 @@
 {
   "_doc": "Fichiers présents dans .github et modele-depot qui peuvent différer (scripts/coherence_modele.py). Clé = chemin ; valeur = raison.",
-  "README.md": "chaque dépôt a son propre README : celui de .github décrit l'organisation, celui du modèle est un gabarit à remplacer"
+  "README.md": "chaque dépôt a son propre README : celui de .github décrit l'organisation, celui du modèle est un gabarit à remplacer",
+  "CLAUDE.md": "l'en-tête nomme son propre dépôt (« .github — CLAUDE.md » / « modele-depot — CLAUDE.md ») ; le corps du bloc Mission est identique"
 }
