@@ -42,3 +42,8 @@ scripts/nettoyer_runner.sh --runner /actions-runner --docker
 ```
 
 Ce dépôt suit lui-même le socle : PR vers `dev`, puis `dev` → `main`. Licence [GPL-3.0-or-later](LICENSE).
+
+Les contrôles Qualité et Garde utilisent `ubuntu-latest` par défaut lorsqu'aucun
+`RUNS_ON_LINUX` n'est défini, afin de ne pas rester en file sans runner « maison ».
+La variable conserve sa priorité pour choisir un runner dédié. Ce repli, autorisé
+par `MISSION.md`, ne modifie aucun contrôle, seuil, permission ou protection (#38).
