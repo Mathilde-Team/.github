@@ -1,0 +1,46 @@
+# Nettoyage nocturne des runners maison (#12) : tâche planifiée de l'issue,
+# en workflow plutôt qu'en cron installé à la main sur les machines.
+#
+# Exécute scripts/nettoyer_runner.sh (livré par la PR #19) sur chaque runner
+# de la machine qui fait tourner ce job, via scripts/nettoyer_tous_runners.sh
+# (découverte des racines : runner courant via $RUNNER_TEMP + sœurs contenant
+# _work/). Trois passages nocturnes car un run = UN runner du groupe « maison »
+# : l'ordonnanceur ne garantit aucune rotation entre machines. workflow_dispatch
+# permet aussi de déclencher à la demande (par exemple juste après un disque
+# plein, cf. RunnerMaison-2 le 22/10/2026).
+#
+# SIMULATION PAR DÉFAUT : le script liste ce qu'il supprimerait et affiche
+# l'espace libre (df), sans rien effacer. Le passage à --appliquer
+# (suppression réelle) est EN ATTENTE de la réponse à la question posée dans
+# l'issue #12 : le mtime du dossier EXTÉRIEUR _work/<dépôt> ne suit pas les
+# checkouts (layout _work/<dépôt>/<dépôt>) — un nettoyage automatique pourrait
+# supprimer l'espace de travail d'un dépôt actif. À n'activer qu'avec la
+# topologie confirmée et un mécanisme d'exclusivité avec les jobs en cours.
+#
+# Ce workflow ne s'exécute (schedule) que présent sur la branche par défaut
+# (main) : la PR dev → main reste relue par un humain.
+name: Nettoyage nocturne des runners maison
+
+"on":
+  schedule:
+    - cron: "17 2,3,4 * * *"   # 3 passages : 03:17, 04:17, 05:17 heure de Paris (hiver)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  nettoyage:
+    name: Nettoyage des runners
+    runs-on: ${{ fromJSON(vars.RUNS_ON_LINUX || '{"group":"maison","labels":["self-hosted","linux"]}') }}
+    timeout-minutes: 20
+    steps:
+      - name: Checkout du dépôt
+        uses: actions/checkout@v7
+
+      # Simulation : liste ce qui serait supprimé (espaces de travail inactifs
+      # depuis 7 jours, journaux _diag > 7 jours, caches > 4 Go, Docker
+      # inutilisé depuis 72 h) et affiche l'espace libre. Voir le commentaire
+      # d'en-tête avant d'ajouter --appliquer.
+      - name: Nettoyage des runners de la machine (simulation)
+        run: scripts/nettoyer_tous_runners.sh --docker
