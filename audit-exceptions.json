@@ -48,6 +48,12 @@
       "raison": "intégration Home Assistant : reste en MIT, comme l'écosystème HACS (SOCLE.md §1)"
     }
   },
+  "mccgq11lm-gazpar": {
+    "licence": {
+      "spdx": "MIT",
+      "raison": "création originale diffusée dans l'écosystème Zigbee2MQTT (MIT), dépendance zigbee-herdsman-converters sous MIT, aucun emprunt de code GPL (mccgq11lm-gazpar#4)"
+    }
+  },
   "demo-repository": {
     "ignorer": "dépôt de démonstration GitHub, privé, pas une production de l'équipe"
   }
